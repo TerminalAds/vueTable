@@ -1,47 +1,109 @@
 <template>
-  <v-data-table
-    :headers="headers"
-    :items="items"
-    :itemsPerPage="itemsPerPage"
-    :loading="loading"
-    hide-default-footer
-    show-select>
-    <template v-for="(slot, i) in $slots" v-slot:item.[slot]="{ item }">
+  <div v-if="data && data.data">
+    <v-data-table
+      v-model="computedValue"
+      :headers="headers"
+      :item-key="$attrs['item-key']"
+      :items="data.data"
+      :itemsPerPage="computedPerPage"
+      :loading="loading"
+      :show-select="$attrs['show-select']"
+      :single-expand="$attrs['single-expand']"
+      :single-select="$attrs['single-select']"
+      hide-default-footer>
+      <template v-for="({value}, i) in headers" v-slot:[`item.${value}`]="{item}">
+        <slot :item="item" :name="value">
+          {{ item[value] }}
+        </slot>
+      </template>
+    </v-data-table>
 
-    </template>
-
-    <!--    <template v-slot:item.clicks="{ item }">-->
-    <!--      <span>{{ item.clicks || 0 }}</span>-->
-    <!--    </template>-->
-
-    <!--    <template v-slot:item.prices="{ item }">-->
-    <!--      {{-->
-    <!--        item.prices && item.prices.length > 0-->
-    <!--          ? item.prices[0].expire_at_days + ' روز تا انقضا'-->
-    <!--          : ' منقضی شده'-->
-    <!--      }}-->
-    <!--    </template>-->
-  </v-data-table>
+    <pagination v-if="data && data.data" ref="pagination" v-model="page" :data="data" @input="onPagination">
+      <template v-slot:per-page>
+        <v-select
+          v-model="computedPerPage"
+          :items="perPageItems"
+          :menu-props="{ offsetY: true }"
+          class="ma-2 my-md-0"
+          dense
+          label="تعداد نمایش"
+          outlined
+        />
+      </template>
+    </pagination>
+  </div>
 </template>
 
 <script>
+import Pagination from "./components/pagination.vue";
+
 export default {
   name: "index.vue",
 
+  components: {Pagination},
+
   props: {
-    items: Array,
-    itemsPerPage: Number,
+    value: [Array, Object],
+    data: Object,
+    perPage: {
+      type: Number,
+      default: 10
+    },
     loading: Boolean,
     headers: Array,
+    perPageItems: {
+      type: Array,
+      default: () => [10, 25, 50, 100, 300, 500, 700, 1000]
+    },
+    totalVisible: {
+      type: Number,
+      default: 5
+    }
   },
 
   data: () => ({
-    itemsPerPage: 10,
     options: {},
-  })
+    page: 1
+  }),
+
+  computed: {
+    computedValue: {
+      get() {
+        return this.value
+      },
+      set(val) {
+        this.$emit('input', val)
+      }
+    },
+    tableProps() {
+      return {
+        page: this.page,
+        length: this.perPage
+      }
+    },
+    computedPerPage: {
+      get() {
+        return this.perPage
+      },
+      set(val) {
+        this.$emit('update:perPage', val)
+      }
+    }
+  },
+
+  methods: {
+    onPagination(e) {
+      if (this.page === this.data?.current_page) return
+
+      this.$emit('change', this.tableProps)
+      window.scrollTo({behavior: "smooth", top: 0, left: 0})
+    }
+  }
 }
 </script>
 
 <style scoped>
-
+.v-data-table >>> tbody tr:nth-child(odd) {
+  background-color: #ebedf3;
+}
 </style>
