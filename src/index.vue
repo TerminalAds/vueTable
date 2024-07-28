@@ -18,7 +18,8 @@
       </template>
     </v-data-table>
 
-    <pagination v-if="data && data.data" ref="pagination" v-model="page" :data="data" @input="onPagination">
+    <pagination v-if="data && data.data" ref="pagination" v-model="page" :data="data" :totalVisible="5"
+                @input="onPagination">
       <template v-slot:per-page>
         <v-select
           v-model="computedPerPage"
